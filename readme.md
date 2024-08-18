@@ -1,5 +1,3 @@
----
-
 # AI Text Generation Package
 
 This package provides a simple way to generate AI-powered text responses using the Google Generative AI API. It integrates Zod for schema validation, ensuring that the generated text adheres to a specific JSON structure.
