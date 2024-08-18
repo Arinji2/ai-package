@@ -16,7 +16,7 @@ export async function generateText({
   prompt: string;
   temperature?: number;
 
-  zodStructure: z.ZodTypeAny;
+  zodStructure?: z.ZodTypeAny;
 }) {
   const isOnServer = typeof window === "undefined";
 
@@ -32,31 +32,47 @@ export async function generateText({
     },
   });
 
-  const jsonSchema = zodToJsonSchema(zodStructure) as Record<string, any>;
+  let modelPrompt = "";
 
-  const modelPrompt = `
+  if (zodStructure) {
+    const jsonSchema = zodToJsonSchema(zodStructure) as Record<string, any>;
+
+    const modelPrompt = `
   This is the prompt you need to run. ${prompt}. 
   Ensure the prompt is in the format of a JSON object with the following structure: 
   ${JSON.stringify(jsonSchema.properties)}.
   Do not add any other text to the response.
 `;
+  } else {
+    modelPrompt = `
+    This is the prompt you need to run. ${prompt}. Make sure to follow the prompt exactly.
+  `;
+  }
 
   try {
     const result = (await model.generateContent([modelPrompt])).response.text();
     try {
       const parsed = JSON.parse(result);
-      const schema = zodStructure.safeParse(parsed);
-      if (!schema.success) {
-        return {
-          type: "error",
-          message: "JSON Schema Validation Failed",
-          data: schema.error,
-        };
+      if (zodStructure) {
+        const schema = zodStructure.safeParse(parsed);
+        if (!schema.success) {
+          return {
+            type: "error",
+            message: "JSON Schema Validation Failed",
+            data: schema.error,
+          };
+        } else {
+          return {
+            type: "success",
+            message: "All Checks Passed",
+            data: schema.data,
+          };
+        }
       } else {
         return {
           type: "success",
           message: "All Checks Passed",
-          data: schema.data,
+          data: parsed,
         };
       }
     } catch (error) {
