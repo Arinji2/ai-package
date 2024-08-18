@@ -1,5 +1,3 @@
-Here's the updated README content:
-
 ---
 
 # AI Text Generation Package
